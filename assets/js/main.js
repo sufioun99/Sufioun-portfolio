@@ -1,9 +1,19 @@
 /* ==========================================================================
-   AsNasim V2 Portfolio — Main JavaScript (WebGL & Interactions)
+   AsNasim V2 Portfolio — Main JavaScript (WebGL & Interactive Upgrades)
    ========================================================================== */
 
 (function () {
   "use strict";
+
+  // Shared state for WebGL dynamic configuration
+  const webglConfig = {
+    speedMultiplier: 1.0,
+    connectionRange: 110,
+    activeColor: 0x00f3ff,
+    activeLineColor: 0x9d00ff,
+    materialRef: null,
+    lineMaterialRef: null,
+  };
 
   /* ------------------------------------------------------------------------
      Preloader Removal
@@ -20,7 +30,47 @@
      DOM Content Loaded
   ------------------------------------------------------------------------ */
   document.addEventListener("DOMContentLoaded", function () {
-    // Nav Toggle for Mobile
+    
+    /* ---- Custom Cursor Follower ---- */
+    const cursor = document.getElementById("custom-cursor");
+    const cursorDot = document.getElementById("custom-cursor-dot");
+
+    if (cursor && cursorDot) {
+      let cursorX = 0, cursorY = 0;
+      let targetX = 0, targetY = 0;
+
+      window.addEventListener("mousemove", (e) => {
+        targetX = e.clientX;
+        targetY = e.clientY;
+      });
+
+      const updateCursor = () => {
+        // Lerp interpolation for smooth trailing follower
+        cursorX += (targetX - cursorX) * 0.16;
+        cursorY += (targetY - cursorY) * 0.16;
+
+        cursor.style.left = `${cursorX}px`;
+        cursor.style.top = `${cursorY}px`;
+        
+        cursorDot.style.left = `${targetX}px`;
+        cursorDot.style.top = `${targetY}px`;
+
+        requestAnimationFrame(updateCursor);
+      };
+      updateCursor();
+
+      // Check hover states
+      const hoverElements = document.querySelectorAll(
+        "a, button, input, textarea, select, .project-card, .timeline-item, .contacts-list li"
+      );
+
+      hoverElements.forEach((el) => {
+        el.addEventListener("mouseenter", () => cursor.classList.add("hovered"));
+        el.addEventListener("mouseleave", () => cursor.classList.remove("hovered"));
+      });
+    }
+
+    /* ---- Mobile Nav Toggle ---- */
     const toggle = document.querySelector(".nav-toggle");
     const menu = document.querySelector(".nav-menu");
     const links = document.querySelectorAll(".nav-link");
@@ -39,21 +89,19 @@
       });
     }
 
-    // Scroll active link highlight & header shrink
+    /* ---- Scroll Link Highlights & Header Shrink ---- */
     const header = document.querySelector(".header");
     const sections = document.querySelectorAll("section");
 
     window.addEventListener("scroll", function () {
       let scrollPos = window.scrollY + 100;
 
-      // Header background shrink
       if (window.scrollY > 50) {
-        header.classList.add("scrolled");
+        header?.classList.add("scrolled");
       } else {
-        header.classList.remove("scrolled");
+        header?.classList.remove("scrolled");
       }
 
-      // Highlight links
       sections.forEach((section) => {
         const id = section.getAttribute("id");
         const top = section.offsetTop;
@@ -71,7 +119,7 @@
     });
 
     /* ------------------------------------------------------------------------
-       Typed Text Effect
+       Typed Text Effect (Hero)
     ------------------------------------------------------------------------ */
     const typedRole = document.getElementById("typed-role");
     if (typedRole) {
@@ -119,8 +167,8 @@
       const countUp = (el) => {
         const target = parseInt(el.getAttribute("data-val"), 10);
         let count = 0;
-        const duration = 2000; // ms
-        const step = target / (duration / 16); // ~60fps
+        const duration = 2000;
+        const step = target / (duration / 16);
 
         const update = () => {
           count += step;
@@ -150,7 +198,69 @@
     }
 
     /* ------------------------------------------------------------------------
-       Formspree Contact Form Handler
+       Projects Search & Tag Filter Logic
+    ------------------------------------------------------------------------ */
+    const projectSearch = document.getElementById("project-search");
+    const filterBtns = document.querySelectorAll(".filter-btn");
+    const projectCards = document.querySelectorAll(".projects-grid .project-card");
+
+    if (projectCards.length > 0) {
+      let activeFilter = "all";
+      let searchKeyword = "";
+
+      const performFilter = () => {
+        projectCards.forEach((card) => {
+          const title = card.querySelector("h3")?.textContent.toLowerCase() || "";
+          const tags = Array.from(card.querySelectorAll(".tags span")).map((span) =>
+            span.textContent.toLowerCase()
+          );
+          const description = card.querySelector("p")?.textContent.toLowerCase() || "";
+
+          // Check keyword
+          const matchesKeyword =
+            title.includes(searchKeyword) ||
+            description.includes(searchKeyword) ||
+            tags.some((tag) => tag.includes(searchKeyword));
+
+          // Check category filter
+          let matchesFilter = false;
+          if (activeFilter === "all") {
+            matchesFilter = true;
+          } else if (activeFilter === "oracle") {
+            matchesFilter = tags.some((t) => t.includes("oracle") || t.includes("forms") || t.includes("apex") || t.includes("sql"));
+          } else if (activeFilter === "web") {
+            matchesFilter = tags.some((t) => t.includes("html") || t.includes("css") || t.includes("typescript") || t.includes("react") || t.includes("vanilla"));
+          } else if (activeFilter === "python") {
+            matchesFilter = tags.some((t) => t.includes("python"));
+          }
+
+          if (matchesKeyword && matchesFilter) {
+            card.classList.remove("filtered-out");
+          } else {
+            card.classList.add("filtered-out");
+          }
+        });
+      };
+
+      // Search event listener
+      projectSearch?.addEventListener("input", function (e) {
+        searchKeyword = e.target.value.toLowerCase().trim();
+        performFilter();
+      });
+
+      // Filter pills listeners
+      filterBtns.forEach((btn) => {
+        btn.addEventListener("click", function () {
+          filterBtns.forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          activeFilter = btn.getAttribute("data-filter");
+          performFilter();
+        });
+      });
+    }
+
+    /* ------------------------------------------------------------------------
+       Formspree Contact Form Submission (AJAX)
     ------------------------------------------------------------------------ */
     const contactForm = document.getElementById("contact-form");
     if (contactForm) {
@@ -194,6 +304,90 @@
           });
       });
     }
+
+    /* ------------------------------------------------------------------------
+       WebGL Control Panel GUI Actions
+    ------------------------------------------------------------------------ */
+    const panelToggle = document.getElementById("webgl-toggle");
+    const controlPanel = document.getElementById("webgl-control-panel");
+    const speedInput = document.getElementById("particle-speed");
+    const distInput = document.getElementById("connection-dist");
+    const speedVal = document.getElementById("speed-val");
+    const distVal = document.getElementById("dist-val");
+    const colorBtns = document.querySelectorAll(".color-presets .color-btn");
+
+    if (panelToggle && controlPanel) {
+      // Toggle panel open/close
+      panelToggle.addEventListener("click", () => {
+        controlPanel.classList.toggle("active");
+      });
+
+      // Close panel if clicked outside
+      document.addEventListener("click", (e) => {
+        if (!controlPanel.contains(e.target) && !panelToggle.contains(e.target)) {
+          controlPanel.classList.remove("active");
+        }
+      });
+
+      // Speed Slider
+      speedInput?.addEventListener("input", (e) => {
+        const val = parseFloat(e.target.value);
+        speedVal.textContent = `${val.toFixed(1)}x`;
+        webglConfig.speedMultiplier = val;
+      });
+
+      // Connection Distance Slider
+      distInput?.addEventListener("input", (e) => {
+        const val = parseInt(e.target.value, 10);
+        distVal.textContent = `${val}px`;
+        webglConfig.connectionRange = val;
+      });
+
+      // Color preset buttons click handler
+      colorBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          colorBtns.forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          const selectedColor = btn.getAttribute("data-color");
+
+          let nodeColor = 0x00f3ff;
+          let lineColor = 0x9d00ff;
+
+          switch (selectedColor) {
+            case "purple":
+              nodeColor = 0x9d00ff;
+              lineColor = 0x00f3ff;
+              break;
+            case "emerald":
+              nodeColor = 0x10b981;
+              lineColor = 0x3b82f6;
+              break;
+            case "amber":
+              nodeColor = 0xf59e0b;
+              lineColor = 0xef4444;
+              break;
+            default: // cyan
+              nodeColor = 0x00f3ff;
+              lineColor = 0x9d00ff;
+          }
+
+          webglConfig.activeColor = nodeColor;
+          webglConfig.activeLineColor = lineColor;
+
+          // Live-update Three.js materials
+          if (webglConfig.materialRef) {
+            webglConfig.materialRef.color.setHex(nodeColor);
+          }
+          if (webglConfig.lineMaterialRef) {
+            webglConfig.lineMaterialRef.color.setHex(lineColor);
+          }
+
+          // Live CSS color token update
+          document.documentElement.style.setProperty("--primary", `#${nodeColor.toString(16).padStart(6, '0')}`);
+          document.documentElement.style.setProperty("--secondary", `#${lineColor.toString(16).padStart(6, '0')}`);
+        });
+      });
+    }
   });
 
   /* ------------------------------------------------------------------------
@@ -203,11 +397,9 @@
     const canvas = document.getElementById("webgl-canvas");
     if (!canvas || typeof THREE === "undefined") return;
 
-    // Dimensions
     let width = window.innerWidth;
     let height = window.innerHeight;
 
-    // Scene, Camera, Renderer
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(60, width / height, 1, 1000);
     camera.position.z = 400;
@@ -215,18 +407,17 @@
     const renderer = new THREE.WebGLRenderer({
       canvas: canvas,
       antialias: true,
-      alpha: true, // Transparent bg to let CSS gradients interact
+      alpha: true,
     });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    // Particle Configuration
+    // Particle Setup
     const particleCount = 120;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     const velocities = [];
 
-    // Range area box
     const range = 600;
 
     for (let i = 0; i < particleCount; i++) {
@@ -243,22 +434,21 @@
 
     geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
 
-    // Particle material (floating circles)
-    // Generating simple round canvas texture programmatically
+    // Circle texture builder
     const textureCanvas = document.createElement("canvas");
     textureCanvas.width = 16;
     textureCanvas.height = 16;
     const ctx = textureCanvas.getContext("2d");
     const grad = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
-    grad.addColorStop(0, "rgba(0, 243, 255, 1)");
-    grad.addColorStop(1, "rgba(0, 243, 255, 0)");
+    grad.addColorStop(0, "rgba(255, 255, 255, 1)");
+    grad.addColorStop(1, "rgba(255, 255, 255, 0)");
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 16, 16);
 
     const texture = new THREE.CanvasTexture(textureCanvas);
 
     const material = new THREE.PointsMaterial({
-      color: 0x00f3ff,
+      color: webglConfig.activeColor,
       size: 4,
       transparent: true,
       blending: THREE.AdditiveBlending,
@@ -266,25 +456,31 @@
       depthWrite: false,
     });
 
+    // Keep reference for control updates
+    webglConfig.materialRef = material;
+
     const pointCloud = new THREE.Points(geometry, material);
     scene.add(pointCloud);
 
-    // Grid connections (Lines)
+    // Line segments
     const lineMaterial = new THREE.LineBasicMaterial({
-      color: 0x9d00ff,
+      color: webglConfig.activeLineColor,
       transparent: true,
-      opacity: 0.15,
+      opacity: 0.16,
       blending: THREE.AdditiveBlending,
     });
+
+    // Keep reference for control updates
+    webglConfig.lineMaterialRef = lineMaterial;
 
     let linePositions = new Float32Array(particleCount * particleCount * 6);
     const lineGeometry = new THREE.BufferGeometry();
     lineGeometry.setAttribute("position", new THREE.BufferAttribute(linePositions, 3));
-    
+
     const lineMesh = new THREE.LineSegments(lineGeometry, lineMaterial);
     scene.add(lineMesh);
 
-    // Mouse tracker
+    // Mouse movement listeners
     let mouse = { x: 0, y: 0, targetX: 0, targetY: 0 };
     window.addEventListener("mousemove", (e) => {
       mouse.targetX = (e.clientX - width / 2) * 0.5;
@@ -295,7 +491,7 @@
     function animate() {
       requestAnimationFrame(animate);
 
-      // Smooth camera tilt tracking mouse
+      // Smooth camera interpolation
       mouse.x += (mouse.targetX - mouse.x) * 0.05;
       mouse.y += (mouse.targetY - mouse.y) * 0.05;
       camera.position.x = mouse.x;
@@ -305,29 +501,28 @@
       const positionsArr = geometry.attributes.position.array;
 
       let lineIdx = 0;
-      let connectedCount = 0;
 
       for (let i = 0; i < particleCount; i++) {
-        // Move particles
-        positionsArr[i * 3] += velocities[i].x;
-        positionsArr[i * 3 + 1] += velocities[i].y;
-        positionsArr[i * 3 + 2] += velocities[i].z;
+        // Apply speedMultiplier from configuration
+        positionsArr[i * 3] += velocities[i].x * webglConfig.speedMultiplier;
+        positionsArr[i * 3 + 1] += velocities[i].y * webglConfig.speedMultiplier;
+        positionsArr[i * 3 + 2] += velocities[i].z * webglConfig.speedMultiplier;
 
-        // Bounce check bounds
+        // Bounce back checks
         const bound = range / 2;
         if (positionsArr[i * 3] > bound || positionsArr[i * 3] < -bound) velocities[i].x *= -1;
         if (positionsArr[i * 3 + 1] > bound || positionsArr[i * 3 + 1] < -bound) velocities[i].y *= -1;
         if (positionsArr[i * 3 + 2] > bound || positionsArr[i * 3 + 2] < -bound) velocities[i].z *= -1;
 
-        // Draw line connections (O(N^2) but optimized with distance checks)
+        // Connections mapping
         for (let j = i + 1; j < particleCount; j++) {
           const dx = positionsArr[i * 3] - positionsArr[j * 3];
           const dy = positionsArr[i * 3 + 1] - positionsArr[j * 3 + 1];
           const dz = positionsArr[i * 3 + 2] - positionsArr[j * 3 + 2];
           const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-          // Connection threshold (120px)
-          if (dist < 110) {
+          // Apply connectionRange limit from configuration
+          if (dist < webglConfig.connectionRange) {
             linePositions[lineIdx++] = positionsArr[i * 3];
             linePositions[lineIdx++] = positionsArr[i * 3 + 1];
             linePositions[lineIdx++] = positionsArr[i * 3 + 2];
@@ -335,7 +530,6 @@
             linePositions[lineIdx++] = positionsArr[j * 3];
             linePositions[lineIdx++] = positionsArr[j * 3 + 1];
             linePositions[lineIdx++] = positionsArr[j * 3 + 2];
-            connectedCount++;
           }
         }
       }
@@ -344,16 +538,15 @@
       lineGeometry.setAttribute("position", new THREE.BufferAttribute(linePositions.subarray(0, lineIdx), 3));
       lineGeometry.attributes.position.needsUpdate = true;
 
-      // Gentle rotation of the scene
-      pointCloud.rotation.y += 0.0008;
-      lineMesh.rotation.y += 0.0008;
+      // Slow scene rotation
+      pointCloud.rotation.y += 0.0006;
+      lineMesh.rotation.y += 0.0006;
 
       renderer.render(scene, camera);
     }
 
     animate();
 
-    // Window Resize logic
     window.addEventListener("resize", onWindowResize);
 
     function onWindowResize() {
