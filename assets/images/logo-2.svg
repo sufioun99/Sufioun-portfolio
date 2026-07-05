@@ -1,0 +1,23 @@
+<svg width="800" height="300" viewBox="0 0 800 300" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(50, 60)">
+        
+        <g transform="translate(0, -30) scale(0.6)">
+            <path d="M0,0 L10,10 L0,20 L7,20 L17,10 L7,0 Z" fill="#D4D925" />
+            <path d="M13,0 L23,10 L13,20 L20,20 L30,10 L20,0 Z" fill="#D4D925" />
+        </g>
+
+        <g transform="translate(0, 110)">
+            <text x="0" y="0" font-family="Arial Black, sans-serif" font-size="100" font-weight="900" fill="white" style="letter-spacing: -4px;">AS</text>
+            <text x="180" y="0" font-family="Arial Black, sans-serif" font-size="100" font-weight="900" fill="white" style="letter-spacing: -4px;">N</text>
+            
+            <g transform="translate(275, -82)">
+                <path d="M0,82 L42,0 L84,82 L65,82 L58,68 L26,68 L19,82 Z" fill="white" />
+                <circle cx="42" cy="52" r="9" fill="#000000" />
+            </g>
+            
+            <text x="380" y="0" font-family="Arial Black, sans-serif" font-size="100" font-weight="900" fill="white" style="letter-spacing: -4px;">SIM</text>
+            
+            <rect x="275" y="30" width="360" height="10" fill="white" />
+        </g>
+    </g>
+</svg>
