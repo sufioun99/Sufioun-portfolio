@@ -2,6 +2,14 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
   "trailingSlash": false,
+  "redirects": [
+    { "source": "/about.html", "destination": "/#about", "permanent": true },
+    { "source": "/works.html", "destination": "/#projects", "permanent": true },
+    { "source": "/contact.html", "destination": "/#contact", "permanent": true },
+    { "source": "/about", "destination": "/#about", "permanent": true },
+    { "source": "/works", "destination": "/#projects", "permanent": true },
+    { "source": "/contact", "destination": "/#contact", "permanent": true }
+  ],
   "headers": [
     {
       "source": "/assets/(.*)",
