@@ -1,42 +1,40 @@
 :root {
     --bg-gradient-onyx: linear-gradient(to bottom right,
-            hsl(240, 1%, 25%) 3%,
-            hsl(0, 0%, 19%) 97%);
-    --bg-gradient-jet: linear-gradient(to bottom right,
-            hsla(240, 1%, 18%, 0.251) 0%,
-            hsla(240, 2%, 11%, 0) 100%), hsl(240, 2%, 13%);
+            rgba(0, 243, 255, 0.05) 3%,
+            rgba(157, 0, 255, 0.02) 97%);
+    --bg-gradient-jet: rgba(13, 16, 27, 0.45);
     --bg-gradient-yellow-1: linear-gradient(to bottom right,
-            hsl(45, 100%, 71%) 0%,
-            hsla(36, 100%, 69%, 0) 50%);
+            #00f3ff 0%,
+            rgba(157, 0, 255, 0) 50%);
     --bg-gradient-yellow-2: linear-gradient(135deg,
-            hsla(45, 100%, 71%, 0.251) 0%,
-            hsla(35, 100%, 68%, 0) 59.86%), hsl(240, 2%, 13%);
+            rgba(0, 243, 255, 0.1) 0%,
+            rgba(157, 0, 255, 0) 59.86%), rgba(13, 16, 27, 0.45);
     --border-gradient-onyx: linear-gradient(to bottom right,
-            hsl(0, 0%, 25%) 0%,
-            hsla(0, 0%, 25%, 0) 50%);
+            rgba(255, 255, 255, 0.08) 0%,
+            rgba(255, 255, 255, 0.01) 50%);
     --text-gradient-yellow: linear-gradient(to right,
-            hsl(45, 100%, 72%),
-            hsl(35, 100%, 68%));
+            #00f3ff,
+            #9d00ff);
 
-    --jet: hsl(0, 0%, 22%);
-    --onyx: hsl(240, 1%, 17%);
-    --eerie-black-1: hsl(240, 2%, 13%);
-    --eerie-black-2: hsl(240, 2%, 12%);
-    --smoky-black: hsl(0, 0%, 7%);
+    --jet: rgba(255, 255, 255, 0.08);
+    --onyx: rgba(255, 255, 255, 0.03);
+    --eerie-black-1: #07080d;
+    --eerie-black-2: rgba(13, 16, 27, 0.45);
+    --smoky-black: #07080d;
     --white-1: hsl(0, 0%, 100%);
     --white-2: hsl(0, 0%, 98%);
-    --orange-yellow-crayola: hsl(45, 100%, 72%);
-    --vegas-gold: hsl(45, 54%, 58%);
-    --light-gray: hsl(0, 0%, 84%);
-    --light-gray-70: hsla(0, 0%, 84%, 0.7);
-    --bittersweet-shimmer: hsl(0, 43%, 51%);
+    --orange-yellow-crayola: #00f3ff;
+    --vegas-gold: #9d00ff;
+    --light-gray: #f3f4f6;
+    --light-gray-70: rgba(243, 244, 246, 0.7);
+    --bittersweet-shimmer: #ef4444;
 
     /**
      * typography
      */
 
     /* font-family */
-    --ff-poppins: 'Poppins', sans-serif;
+    --ff-poppins: 'Space Grotesk', sans-serif;
 
     /* font-size */
     --fs-1: 24px;
@@ -58,11 +56,11 @@
      * shadow
      */
 
-    --shadow-1: -4px 8px 24px hsla(0, 0%, 0%, 0.25);
-    --shadow-2: 0 16px 30px hsla(0, 0%, 0%, 0.25);
-    --shadow-3: 0 16px 40px hsla(0, 0%, 0%, 0.25);
-    --shadow-4: 0 25px 50px hsla(0, 0%, 0%, 0.15);
-    --shadow-5: 0 24px 80px hsla(0, 0%, 0%, 0.25);
+    --shadow-1: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    --shadow-2: 0 15px 40px -15px rgba(0, 243, 255, 0.15);
+    --shadow-3: 0 16px 40px rgba(0, 0, 0, 0.3);
+    --shadow-4: 0 25px 50px rgba(0, 0, 0, 0.4);
+    --shadow-5: 0 24px 80px rgba(0, 0, 0, 0.5);
 
     /**
      * transition
@@ -84,6 +82,7 @@
 
 a {
     text-decoration: none;
+    transition: var(--transition-1);
 }
 
 li {
@@ -117,7 +116,7 @@ textarea {
 
 ::selection {
     background: var(--orange-yellow-crayola);
-    color: var(--smoky-black);
+    color: var(--eerie-black-1);
 }
 
 :focus {
@@ -126,20 +125,43 @@ textarea {
 
 html {
     font-family: var(--ff-poppins);
+    background-color: var(--smoky-black);
+    scroll-behavior: smooth;
 }
 
 body {
-    background: var(--smoky-black);
+    background: transparent; /* WebGL canvas shows behind */
+    position: relative;
+    min-height: 100vh;
+}
+
+/* WebGL canvas backdrop placement */
+#webgl-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -10;
 }
 
 .sidebar,
 article {
     background: var(--eerie-black-2);
-    border: 1px solid var(--jet);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 20px;
-    padding: 15px;
+    padding: 20px;
     box-shadow: var(--shadow-1);
     z-index: 1;
+    transition: var(--transition-1);
+}
+
+.sidebar:hover,
+article:hover {
+    border-color: rgba(0, 243, 255, 0.2);
+    box-shadow: var(--shadow-2);
 }
 
 .separator {
